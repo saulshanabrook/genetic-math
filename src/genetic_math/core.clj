@@ -1,5 +1,6 @@
 (ns genetic-math.core
-  (:require [clojure.math.numeric-tower :as math]))
+  (:require [clojure.math.numeric-tower :as math])
+  (:require [clojure.test :refer [function?]]))
 
 ;;;; My goal is to try to start on the example you gave of trying to fit a function to points with genetic programming
 ;;;; It will be messy and horribly written, but I would like to give it a go.
@@ -10,32 +11,30 @@
 ;; 1. start with blank, then choose a random function.
 ;; 2. then choose two random arguments, either data or functions.
 ;; 3. if it is a function, then start back at 2, keeping track of recursion
-(defn choose-random
-  [v]
-  "Return a random element of this vector"
-  (nth v (rand (math/floor (count v)))))
 
-(defn random-args [data functions recursion-levels-left]
-  (dec recursion-levels-left)
-  (if recursion-levels-left
-    (do
-      (repeatedly 2 #(choose-random functions data))))
-    (do ; else
-      (def args (repeatedly 2 #(choose-random (concat functions data))))
-      (map (fn [arg]
-               (if (contains? data arg) ; if the argument is just data (in data)
-                 arg ; then return that,
-                 ;; else it is a function so return that function plus two new arguments for it
-                 (into ; http://stackoverflow.com/a/4095819/907060
-                  ['arg]
-                  (random-args data functions recursion-levels-left)))) ; get two new args for this new function
-               args))) ; apply this get-arg-or-create-new-function over args
+(declare random-function) ; so that you can reference it before assignment http://stackoverflow.com/a/18421533/907060
 
-(defn random-function [data functions max-recursion-level]
-  (def function (choose-random functions))
-  (def args (random-args data functions max-recursion-level))
-  (into [function] args))
+(defn random-function-or-data [possible-values recursion-levels-left]
+  (if (zero? recursion-levels-left) ; if-else from http://stackoverflow.com/a/4943866/907060
+    (rand-nth (remove function? possible-values)) ; if the recursions level is reaches return just some data
+    (random-function possible-values (dec recursion-levels-left)))) ; else return a new function
+
+(defn random-function [possible-values recursion-levels-left]
+  (list (rand-nth (filter function? possible-values))
+   (random-function-or-data possible-values recursion-levels-left)
+   (random-function-or-data possible-values recursion-levels-left)))
+
 
 ;; Use vectors [] instead of list '() because made for when accesing
 ;; based on index and not appending or prepending
-(random-function '[.1 x] '[+ - / *] 1)
+(random-function '[.1 x + - / *] 1)
+
+
+;; Then I wasn't sure how to turn this into a clojure function
+(defn math-function-to-clojure-function [function]
+  (fn [x] function)
+  )
+
+(def some-math-function (random-function '[0.2 + - x *] 1))
+((math-function-to-clojure-function some-math-function) 1)
+(+ 1 1)
