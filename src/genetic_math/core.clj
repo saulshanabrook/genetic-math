@@ -19,7 +19,7 @@
     (rand-nth (remove function? possible-values)) ; if the recursions level is reaches return just some data
     (random-function possible-values (dec recursion-levels-left)))) ; else return a new function
 
-(defn random-function [possible-values recursion-levels-left]
+(defn random-math-function [possible-values recursion-levels-left]
   (list (rand-nth (filter function? possible-values))
    (random-function-or-data possible-values recursion-levels-left)
    (random-function-or-data possible-values recursion-levels-left)))
@@ -27,14 +27,15 @@
 
 ;; Use vectors [] instead of list '() because made for when accesing
 ;; based on index and not appending or prepending
-(random-function '[.1 x + - / *] 1)
+(random-math-function '[0.1 x + - / *] 1)
 
 
-;; Then I wasn't sure how to turn this into a clojure function
-(defn math-function-to-clojure-function [function]
-  (fn [x] function)
-  )
+(defn random-lisp-function
+  [possible-values recursion-levels-left]
+  "gives you a random clojure math function"
+  (fn [x] (eval (random-math-function possible-values recursion-levels-left))))
 
-(def some-math-function (random-function '[0.2 + - x *] 1))
-((math-function-to-clojure-function some-math-function) 1)
-(+ 1 1)
+
+
+(random-lisp-function '[0.1 x + - / *] 1)
+((random-lisp-function '[0.1 x + - / *] 1) 3)
